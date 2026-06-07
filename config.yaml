@@ -1,0 +1,61 @@
+# inbox-zero-agent config
+# Sender profile, warmup schedule, send caps, business hours.
+
+sender_profile:
+  name: "Lucas"
+  reply_to: ""             # leave blank to use the from-address
+  signature: ""            # plain text appended after body
+  # CAN-SPAM REQUIREMENT. Every cold email footer MUST contain a valid
+  # physical postal address. The send path refuses to send if this is blank.
+  physical_address: ""     # e.g. "123 Main St, Toronto, ON M5V 1A1, Canada"
+
+warmup:
+  # Per-account daily send cap ramp. Applied to each new campaign.
+  # The cap grows 50% per week of campaign age.
+  start_cap: 10
+  week_2_cap: 15
+  week_3_cap: 22
+  week_4_cap: 33
+  week_5_cap: 50
+  week_6_cap: 75
+  week_7_plus_cap: 100
+  # If spam-complaint rate exceeds this, the account auto-pauses for 7 days.
+  spam_rate_pause_threshold: 0.005  # 0.5%
+
+throttler:
+  # Seconds to wait between sends on the same account.
+  min_jitter_seconds: 60
+  max_jitter_seconds: 90
+  # Recipient local-time business-hours window. Sends outside this are
+  # deferred to the next 9am in the recipient's IANA timezone.
+  business_hours_start: 9
+  business_hours_end: 17
+  # If recipient country is unknown, fall back to this timezone.
+  default_recipient_timezone: "America/Toronto"
+
+compliance:
+  # The URL that handles one-click unsubscribe (RFC 8058).
+  # v1: this is a stub URL that 404s. v1.1: point to a real webhook.
+  unsubscribe_base_url: "http://localhost:8503/u"
+  # Required List-Unsubscribe headers. Do not remove any.
+  required_headers:
+    - "List-Unsubscribe"
+    - "List-Unsubscribe-Post"
+    - "X-Entity-Ref-ID"
+
+triage:
+  # The friend-inherited account being triaged. Reads only.
+  triage_account: ""
+  # Batch size for the backfill triage (parallel workers).
+  backfill_max_workers: 4
+  # Maximum threads to triage in one backfill run.
+  backfill_max_threads: 500
+
+streamlit:
+  port: 8502
+  page_icon: ":inbox_tray:"
+  layout: "wide"
+
+paths:
+  # Sibling project: where Evil research agents' src/llm.py lives.
+  evil_research_agents_root: "C:/Users/lucas/Desktop/Evil research agents"

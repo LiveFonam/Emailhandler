@@ -1,0 +1,63 @@
+# Secrets and credentials (NEVER commit)
+.env
+.env.local
+.env.*.local
+data/credentials.json
+data/token*.json
+*.pem
+*.key
+secrets.yaml
+secrets.yml
+
+# Google OAuth tokens
+**/token.json
+**/credentials.json
+**/gmail_token.json
+
+# Runtime data (regenerated on startup, may contain personal data)
+data/inbox_zero.db
+data/inbox_zero.db-wal
+data/inbox_zero.db-shm
+data/run.log
+data/sent_mime/*.eml
+data/sent_mime/*.mime
+data/exports/*.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+*.egg-info/
+build/
+dist/
+
+# Virtual envs
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Local data
+*.db
+*.sqlite
+*.sqlite3

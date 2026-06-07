@@ -1,0 +1,23 @@
+# Gmail + LLM
+google-api-python-client>=2.120
+google-auth>=2.27
+google-auth-oauthlib>=1.2
+anthropic>=0.40
+pyyaml>=6.0
+python-dotenv>=1.0
+pydantic>=2.6
+
+# Triage / drafts
+streamlit>=1.33
+pandas>=2.0
+plotly>=5.18
+apscheduler>=3.10
+plyer>=2.1
+
+# Leads / scraping
+requests>=2.31
+beautifulsoup4>=4.12
+rapidfuzz>=3.9
+
+# Outbound (deferred, but installed for v1.1 compatibility)
+jinja2>=3.1
