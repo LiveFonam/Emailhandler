@@ -176,6 +176,22 @@ CREATE TABLE IF NOT EXISTS compliance_audit (
     failed          INTEGER,
     failures_json   TEXT
 );
+
+-- Per-recipient outreach subscription record. The token is the single
+-- source of truth: the SAME token is baked into both the List-Unsubscribe
+-- header and the in-body URL. Persisting it here lets the unsubscribe
+-- handler resolve the recipient's click. CRITICAL for CAN-SPAM.
+CREATE TABLE IF NOT EXISTS outreach_subscriptions (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    email           TEXT NOT NULL,
+    token           TEXT UNIQUE NOT NULL,
+    campaign_id     INTEGER,
+    send_job_id     INTEGER,
+    sent_at         TEXT,
+    unsubscribed_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_outreach_sub_token ON outreach_subscriptions(token);
+CREATE INDEX IF NOT EXISTS idx_outreach_sub_email ON outreach_subscriptions(email);
 """
 
 
@@ -184,7 +200,14 @@ _local = threading.local()
 
 def get_conn() -> sqlite3.Connection:
     """Per-thread connection. Each Streamlit request is a thread, so this
-    gives us request-scoped connections automatically."""
+    gives us request-scoped connections automatically.
+
+    CRITICAL: WAL alone is not enough. We also set:
+      - busy_timeout=5000  : 5s retry window when scheduler+Streamlit collide
+      - synchronous=NORMAL : 2-3x write throughput; tolerates a 100-byte
+                             data loss on OS crash (acceptable for outreach)
+      - wal_autocheckpoint=1000 : keep the WAL file from growing unbounded
+    """
     conn = getattr(_local, "conn", None)
     if conn is None:
         conn = sqlite3.connect(
@@ -195,6 +218,9 @@ def get_conn() -> sqlite3.Connection:
         )
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL;")
+        conn.execute("PRAGMA synchronous=NORMAL;")
+        conn.execute("PRAGMA busy_timeout=5000;")
+        conn.execute("PRAGMA wal_autocheckpoint=1000;")
         conn.execute("PRAGMA foreign_keys=ON;")
         _local.conn = conn
     return conn
@@ -217,9 +243,15 @@ def init_schema() -> None:
         conn.executescript(SCHEMA_SQL)
 
 
-def exec(sql: str, params: Iterable[Any] = ()) -> None:
+def exec(sql: str, params: Iterable[Any] = (), return_rowcount: bool = False) -> Optional[int]:
+    """Execute a write. If return_rowcount=True, returns the number of
+    rows affected (useful for atomic CAS guards like
+    `UPDATE ... WHERE status='pending'`)."""
     with transaction() as conn:
-        conn.execute(sql, tuple(params))
+        cur = conn.execute(sql, tuple(params))
+        if return_rowcount:
+            return cur.rowcount
+        return None
 
 
 def execmany(sql: str, rows: Iterable[Iterable[Any]]) -> None:

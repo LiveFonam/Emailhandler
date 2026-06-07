@@ -74,13 +74,13 @@ def main() -> int:
     # === Phase D: outreach engine ===
     print("\nPhase D: outreach engine + variants + analytics")
     def d1():
-        from src.outreach import template, variants, personalize, queue, sender, instantly  # noqa: F401
+        from src.outreach import template, variants, queue, sender  # noqa: F401
         from src.outreach.template import FRAMEWORKS
         assert len(FRAMEWORKS) >= 5, f"need 5 frameworks, got {len(FRAMEWORKS)}"
         print(f"    Frameworks: {list(FRAMEWORKS.keys())}")
     def d2():
         from src.analytics import warmup_metrics, reply_rate, compliance_audit  # noqa: F401
-    check("outreach (template, variants, personalize, queue, sender, instantly)", d1)
+    check("outreach (template, variants, queue, sender)", d1)
     check("analytics (warmup, reply, audit)", d2)
 
     # === Phase E: leads + scraping ===

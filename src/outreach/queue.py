@@ -31,12 +31,23 @@ def build_send_jobs(
 
     from_mailbox_id = campaign["from_mailbox_id"]
     if not from_mailbox_id:
-        # Auto-pick the first mailbox in the DB; v1.1 will let users choose
-        row = db.query_one("SELECT id FROM mailboxes ORDER BY id LIMIT 1")
-        if not row:
+        # Round-robin across all active (unpaused) mailboxes whose daily
+        # cap has not been hit. If none are under cap, fall back to the
+        # first mailbox — the scheduler will defer if it's also at cap.
+        active_mailboxes = db.query_all(
+            """SELECT id, total_sent_today, current_daily_cap
+               FROM mailboxes
+               WHERE paused_reason IS NULL
+               ORDER BY id"""
+        )
+        if not active_mailboxes:
             log.warning("queue: no mailboxes configured")
             return 0
-        from_mailbox_id = row["id"]
+        # Pick the mailbox with the most remaining headroom today.
+        from_mailbox_id = min(
+            active_mailboxes,
+            key=lambda m: m["total_sent_today"] - m["current_daily_cap"],
+        )["id"]
 
     cap = daily_cap or campaign["daily_cap"] or settings.warmup.start_cap
 

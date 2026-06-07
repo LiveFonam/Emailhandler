@@ -197,8 +197,20 @@ def main():
     db.init_schema()
 
     sched = BackgroundScheduler(timezone="UTC")
+    # CRITICAL: max_instances=1 + coalesce=True on outreach_dispatch prevents
+    # the same SendJob from being processed by two iterations simultaneously.
+    # The DB-level claim in sender._next_pending_job is the second line of
+    # defense; this is the first.
     sched.add_job(job_inbox_poll, IntervalTrigger(minutes=5), id="inbox_poll", replace_existing=True)
-    sched.add_job(job_outreach_dispatch, IntervalTrigger(seconds=60), id="outreach_dispatch", replace_existing=True)
+    sched.add_job(
+        job_outreach_dispatch,
+        IntervalTrigger(seconds=60),
+        id="outreach_dispatch",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+        misfire_grace_time=120,
+    )
     sched.add_job(job_warmup_bump, CronTrigger(hour=0, minute=0), id="warmup_bump", replace_existing=True)
     sched.add_job(job_snooze_restore, IntervalTrigger(seconds=60), id="snooze_restore", replace_existing=True)
     sched.add_job(job_compliance_audit, CronTrigger(hour=4, minute=0), id="compliance_audit", replace_existing=True)

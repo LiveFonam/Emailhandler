@@ -79,7 +79,6 @@ _REQUIRED_STAGES = {
     "triage": "reason",
     "summarize": "reason",
     "draft_reply": "chat",
-    "personalize": "reason",
     "variant_gen": "reason",
 }
 
@@ -164,18 +163,6 @@ def call_draft(
     """Reply draft in user's voice. Sonnet-class recommended."""
     return _evil_llm.call_model(
         "draft_reply", system, user, schema=schema, max_tokens=max_tokens
-    )
-
-
-def call_personalize(
-    system: str,
-    user: str,
-    schema: Optional[Type[Any]] = None,
-    max_tokens: int = 400,
-) -> Any:
-    """Single-variant hook (opening 1-2 sentences). Haiku-class is enough."""
-    return _evil_llm.call_model(
-        "personalize", system, user, schema=schema, max_tokens=max_tokens
     )
 
 

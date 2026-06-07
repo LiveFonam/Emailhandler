@@ -10,6 +10,11 @@ Every cold / outreach email MUST have:
 `assert_headers(mime_bytes)` is called from gmail.send.send_mime() before
 any send. If any required header is missing, we raise and refuse to send.
 
+The unsubscribe token returned by `can_spam_headers()` is the SINGLE source
+of truth — the same token is baked into both the List-Unsubscribe header
+and the body footer URL, and persisted to the `outreach_subscriptions`
+table so the unsubscribe handler can resolve it.
+
 Penalties: $53,088 per non-compliant commercial email (FTC 2025 inflation).
 """
 from __future__ import annotations
@@ -47,8 +52,12 @@ def can_spam_headers(
     from_addr: str,
     reply_to: str,
     email: str,
-) -> dict[str, str]:
-    """Return the dict of CAN-SPAM headers to add to a Message object."""
+) -> tuple[dict[str, str], str]:
+    """Return (headers, token). The token MUST be persisted by the caller
+    (see sender._build_mime_for_job) so the unsubscribe handler can resolve
+    the recipient's click. Never generate a second token for the same
+    recipient — that would leave the body URL unresolvable.
+    """
     token = generate_unsubscribe_token()
     unsub_url = build_unsubscribe_url(email, token)
     return {
