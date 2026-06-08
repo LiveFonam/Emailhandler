@@ -7,7 +7,7 @@ sender_profile:
   signature: ""            # plain text appended after body
   # CAN-SPAM REQUIREMENT. Every cold email footer MUST contain a valid
   # physical postal address. The send path refuses to send if this is blank.
-  physical_address: ""     # e.g. "123 Main St, Toronto, ON M5V 1A1, Canada"
+  physical_address: "59 Rue de Serres, Terrebonne, QC J6Y 1W3, Canada"
 
 warmup:
   # Per-account daily send cap ramp. Applied to each new campaign.
@@ -53,7 +53,8 @@ triage:
 
 streamlit:
   port: 8502
-  page_icon: ":inbox_tray:"
+  # Text-only page favicon. Avoids the low-res emoji on Windows browsers.
+  page_icon: "0"
   layout: "wide"
 
 paths:

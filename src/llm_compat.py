@@ -193,3 +193,38 @@ def claude_spend_usd() -> float:
 def set_claude_enabled(enabled: bool) -> None:
     if hasattr(_evil_llm, "set_claude_enabled"):
         _evil_llm.set_claude_enabled(enabled)
+
+
+# ---- UI status helper (used by Home.py; never prints Claude on the page) --
+
+def m3_status() -> dict:
+    """Return a small dict describing the local M3 / Ollama status.
+
+    Shape: {"ready": bool, "offline": bool, "label": str, "provider": str}
+
+    Never raises. Used by the Home page to render a single friendly label
+    without exposing the underlying provider chain. Intentionally hides
+    the word "Claude" from the UI surface.
+    """
+    try:
+        last = getattr(_evil_llm, "_LAST_BACKEND", None) or ""
+        last_norm = last.strip().lower()
+    except Exception:
+        last_norm = ""
+
+    if "ollama" in last_norm or "m3" in last_norm:
+        return {"ready": True, "offline": False,
+                "label": "M3 (local)", "provider": "ollama"}
+
+    ollama_cfg = None
+    try:
+        ollama_cfg = getattr(_evil_llm, "_OLLAMA", None)
+    except Exception:
+        ollama_cfg = None
+
+    if ollama_cfg is not None:
+        return {"ready": True, "offline": False,
+                "label": "M3 (local)", "provider": "ollama"}
+
+    return {"ready": False, "offline": True,
+            "label": "Ollama offline", "provider": "ollama"}

@@ -54,15 +54,20 @@ def test_missing_list_unsubscribe_fails():
         assert_headers(msg.as_bytes())
 
 
-def test_missing_physical_address_fails():
-    # Set the config to require an address (it might be empty in test env)
+def test_missing_physical_address_fails(monkeypatch):
+    """When the configured address is blank, the compliance check must
+    fail even if the body contains other text."""
     from src.config import settings
-    if not settings.sender.physical_address:
-        # Pretend we have an address configured
-        settings.sender.physical_address = "123 Main St, Toronto, ON"
-    mime = _build_compliant_mime()  # this has the address in body
+    # Force the config to be blank regardless of what's in config.yaml
+    monkeypatch.setattr(settings.sender, "physical_address", "")
+    mime = _build_compliant_mime("123 Main St, Toronto, ON")
     check = check_mime(mime)
-    assert check.has_physical_address
+    assert not check.has_physical_address, (
+        "With empty config address, has_physical_address should be False"
+    )
+    assert "physical_address" in (check.issues[0] if check.issues else "") or any(
+        "physical" in i for i in check.issues
+    ), f"Expected physical-address issue, got: {check.issues}"
 
 
 def test_spam_score_basic():
